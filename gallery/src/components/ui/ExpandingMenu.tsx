@@ -78,9 +78,9 @@ export function ExpandingMenu() {
                             animate={{ opacity: 1, x: 0, scale: 1 }}
                             exit={{ opacity: 0, x: 100, scale: 0.95 }}
                             transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-                            className="fixed top-24 right-6 z-50 w-72 bg-white/[0.05] backdrop-blur-2xl border border-white/[0.1] rounded-2xl overflow-hidden shadow-2xl"
+                            className="fixed top-24 right-6 z-50 w-80 bg-white/[0.05] backdrop-blur-2xl border border-white/[0.1] rounded-2xl overflow-hidden shadow-2xl"
                         >
-                            <div className="p-2">
+                            <div className="p-3">
                                 {categories.map((category, index) => (
                                     <motion.div
                                         key={category.slug}
@@ -92,7 +92,7 @@ export function ExpandingMenu() {
                                             href={category.locked ? '/intimate' : `/category/${category.slug}`}
                                             onClick={() => setIsOpen(false)}
                                             className={`
-                        flex items-center gap-4 px-4 py-3 rounded-xl
+                        flex items-center gap-5 px-5 py-4 rounded-xl
                         transition-all duration-300 group
                         ${category.locked
                                                     ? 'text-[#ff00aa] hover:bg-[#ff00aa]/10'
@@ -109,9 +109,9 @@ export function ExpandingMenu() {
                       `}>
                                                 {category.icon}
                                             </span>
-                                            <span className="font-medium tracking-wide">{category.name}</span>
+                                            <span className="font-medium tracking-wide text-lg">{category.name}</span>
                                             {category.locked && (
-                                                <span className="ml-auto text-xs text-[#ff00aa]/60">
+                                                <span className="ml-auto text-xs text-[#ff00aa]/60 tracking-wider font-light uppercase border border-[#ff00aa]/20 px-2 py-1 rounded">
                                                     Private
                                                 </span>
                                             )}
@@ -121,13 +121,13 @@ export function ExpandingMenu() {
                             </div>
 
                             {/* Admin Link */}
-                            <div className="border-t border-white/[0.05] p-2">
+                            <div className="border-t border-white/[0.05] p-3">
                                 <Link
                                     href="/admin"
                                     onClick={() => setIsOpen(false)}
-                                    className="flex items-center gap-4 px-4 py-3 rounded-xl text-white/40 hover:text-white hover:bg-white/5 transition-all"
+                                    className="flex items-center gap-5 px-5 py-4 rounded-xl text-white/40 hover:text-white hover:bg-white/5 transition-all"
                                 >
-                                    <span className="text-xs">Admin</span>
+                                    <span className="text-sm tracking-widest uppercase">Admin Portal</span>
                                 </Link>
                             </div>
                         </motion.nav>

@@ -81,22 +81,22 @@ export default function AdminLoginPage() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5 }}
             >
-                <GlassCard intensity="strong" glow="cyan" hover={false} className="w-full max-w-lg p-12">
+                <GlassCard intensity="strong" glow="cyan" hover={false} className="w-full max-w-xl p-14">
                     {/* Logo */}
                     <motion.div
                         initial={{ scale: 0 }}
                         animate={{ scale: 1 }}
                         transition={{ type: 'spring', delay: 0.2 }}
-                        className="w-20 h-20 mx-auto mb-8 rounded-full bg-[#00f0ff]/10 flex items-center justify-center border border-[#00f0ff]/20"
+                        className="w-24 h-24 mx-auto mb-10 rounded-full bg-[#00f0ff]/10 flex items-center justify-center border border-[#00f0ff]/20"
                     >
-                        <Camera size={40} className="text-[#00f0ff]" />
+                        <Camera size={48} className="text-[#00f0ff]" />
                     </motion.div>
 
                     <motion.h1
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.3 }}
-                        className="text-3xl font-light text-center text-white mb-3 tracking-wide"
+                        className="text-4xl font-light text-center text-white mb-4 tracking-wide"
                     >
                         Admin Portal
                     </motion.h1>
@@ -105,29 +105,29 @@ export default function AdminLoginPage() {
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.4 }}
-                        className="text-sm text-center text-white/50 mb-10 tracking-widest uppercase"
+                        className="text-sm text-center text-white/50 mb-12 tracking-[0.2em] uppercase font-light"
                     >
                         G&M Photography Management
                     </motion.p>
 
-                    <form onSubmit={handleSubmit}>
+                    <form onSubmit={handleSubmit} className="space-y-6">
                         {/* Email Field */}
                         <motion.div
                             initial={{ opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: 0.5 }}
-                            className="relative mb-4"
+                            className="relative"
                         >
                             <Mail
-                                size={18}
-                                className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40"
+                                size={20}
+                                className="absolute left-5 top-1/2 -translate-y-1/2 text-white/40"
                             />
                             <input
                                 type="email"
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
                                 placeholder="Email address"
-                                className="w-full bg-white/[0.05] border border-white/[0.1] rounded-xl px-4 py-3 pl-12 text-white placeholder-white/30 focus:outline-none focus:border-[#00f0ff]/50 focus:ring-1 focus:ring-[#00f0ff]/30 transition-all"
+                                className="w-full bg-white/[0.05] border border-white/[0.1] rounded-2xl px-6 py-4 pl-14 text-lg text-white placeholder-white/30 focus:outline-none focus:border-[#00f0ff]/50 focus:ring-1 focus:ring-[#00f0ff]/30 transition-all"
                                 required
                                 autoFocus
                             />
@@ -138,18 +138,18 @@ export default function AdminLoginPage() {
                             initial={{ opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: 0.6 }}
-                            className="relative mb-6"
+                            className="relative"
                         >
                             <Lock
-                                size={18}
-                                className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40"
+                                size={20}
+                                className="absolute left-5 top-1/2 -translate-y-1/2 text-white/40"
                             />
                             <input
                                 type="password"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                                 placeholder="Password"
-                                className="w-full bg-white/[0.05] border border-white/[0.1] rounded-xl px-4 py-3 pl-12 text-white placeholder-white/30 focus:outline-none focus:border-[#00f0ff]/50 focus:ring-1 focus:ring-[#00f0ff]/30 transition-all"
+                                className="w-full bg-white/[0.05] border border-white/[0.1] rounded-2xl px-6 py-4 pl-14 text-lg text-white placeholder-white/30 focus:outline-none focus:border-[#00f0ff]/50 focus:ring-1 focus:ring-[#00f0ff]/30 transition-all"
                                 required
                             />
                         </motion.div>
@@ -158,7 +158,7 @@ export default function AdminLoginPage() {
                             <motion.p
                                 initial={{ opacity: 0, y: -10 }}
                                 animate={{ opacity: 1, y: 0 }}
-                                className="text-red-400 text-sm text-center mb-4"
+                                className="text-red-400 text-sm text-center"
                             >
                                 {error}
                             </motion.p>
@@ -172,11 +172,11 @@ export default function AdminLoginPage() {
                             whileTap={{ scale: 0.98 }}
                             type="submit"
                             disabled={isLoading}
-                            className="w-full bg-gradient-to-r from-[#00f0ff] to-[#00f0ff]/80 text-[#0a0a0f] font-semibold py-3 rounded-xl cursor-pointer shadow-[0_0_30px_rgba(0,240,255,0.3)] hover:shadow-[0_0_40px_rgba(0,240,255,0.5)] transition-shadow disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                            className="w-full bg-gradient-to-r from-[#00f0ff] to-[#00f0ff]/80 text-[#0a0a0f] font-semibold py-4 rounded-2xl cursor-pointer shadow-[0_0_30px_rgba(0,240,255,0.3)] hover:shadow-[0_0_40px_rgba(0,240,255,0.5)] transition-shadow disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-lg mt-8"
                         >
                             {isLoading ? (
                                 <>
-                                    <Loader2 size={18} className="animate-spin" />
+                                    <Loader2 size={20} className="animate-spin" />
                                     Signing in...
                                 </>
                             ) : (

@@ -3,6 +3,7 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+
 import {
     Upload,
     LogOut,
@@ -16,12 +17,13 @@ import {
     Check,
     X,
     Image as ImageIcon,
+    RefreshCw,
 } from 'lucide-react';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { auth, storage, db } from '@/lib/firebase';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
-import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { ref, uploadBytesResumable, getDownloadURL, listAll } from 'firebase/storage';
+import { collection, addDoc, serverTimestamp, query, where, getDocs } from 'firebase/firestore';
 
 const categories = [
     { id: 'events', name: 'Events', icon: <Camera size={18} /> },
@@ -43,6 +45,8 @@ export default function AdminDashboardPage() {
     const [isUploading, setIsUploading] = useState(false);
     const [uploadProgress, setUploadProgress] = useState(0);
     const [uploadSuccess, setUploadSuccess] = useState(false);
+    const [isSyncing, setIsSyncing] = useState(false);
+    const [syncStats, setSyncStats] = useState<{ added: number; total: number } | null>(null);
 
     useEffect(() => {
         if (!auth) {
@@ -207,6 +211,82 @@ export default function AdminDashboardPage() {
         }
     };
 
+    // State for review workflow
+    const [uncategorizedImages, setUncategorizedImages] = useState<any[]>([]);
+
+    // Fetch uncategorized images
+    const fetchUncategorized = useCallback(async () => {
+        const q = query(
+            collection(db, 'images'),
+            where('category', '==', 'uncategorized'),
+            // orderBy('createdAt', 'desc') // Requires index, skip for now or handle in memory
+        );
+        const snapshot = await getDocs(q);
+        const images = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        setUncategorizedImages(images);
+    }, []);
+
+    useEffect(() => {
+        if (isAuthenticated) {
+            fetchUncategorized();
+        }
+    }, [isAuthenticated, fetchUncategorized]);
+
+    // New function to sync existing Storage files to Firestore
+    const handleSyncStorage = async () => {
+        if (!confirm('This will scan Storage and add missing files to the Gallery. Continue?')) return;
+
+        setIsSyncing(true);
+        setSyncStats(null);
+        let addedCount = 0;
+        let totalCount = 0;
+
+        try {
+            const galleryRef = ref(storage, 'gallery');
+            const res = await listAll(galleryRef);
+            const rootRef = ref(storage, '');
+            const resRoot = await listAll(rootRef);
+
+            const allItems = [...res.items, ...resRoot.items];
+            totalCount = allItems.length;
+
+            for (const itemRef of allItems) {
+                try {
+                    const url = await getDownloadURL(itemRef);
+
+                    // Check if exists in Firestore
+                    const q = query(collection(db, 'images'), where('url', '==', url));
+                    const querySnapshot = await getDocs(q);
+
+                    if (querySnapshot.empty) {
+                        // Add to Firestore as UNCATEGORIZED
+                        await addDoc(collection(db, 'images'), {
+                            url: url,
+                            category: 'uncategorized',
+                            description: '',
+                            filename: itemRef.name,
+                            size: 0,
+                            createdAt: serverTimestamp(),
+                            needsReview: true
+                        });
+                        addedCount++;
+                    }
+                } catch (err) {
+                    console.error('Error syncing item:', itemRef.name, err);
+                }
+            }
+
+            setSyncStats({ added: addedCount, total: totalCount });
+            await fetchUncategorized(); // Refresh list
+
+        } catch (err) {
+            console.error('Sync failed:', err);
+            alert('Sync failed. Check console.');
+        } finally {
+            setIsSyncing(false);
+        }
+    };
+
     const handleSignOut = async () => {
         if (auth) {
             await signOut(auth);
@@ -240,18 +320,67 @@ export default function AdminDashboardPage() {
                     </h1>
                     <p className="text-sm text-white/40">Upload and manage your gallery</p>
                 </div>
-                <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={handleSignOut}
-                    className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/[0.05] border border-white/[0.1] text-white/60 hover:text-white hover:bg-white/[0.1] transition-all"
-                >
-                    <LogOut size={18} />
-                    Sign Out
-                </motion.button>
+                <div className="flex gap-3">
+                    <motion.button
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={handleSyncStorage}
+                        disabled={isSyncing}
+                        className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#ff00aa]/10 border border-[#ff00aa]/20 text-[#ff00aa] hover:bg-[#ff00aa]/20 transition-all disabled:opacity-50"
+                    >
+                        {isSyncing ? <Loader2 size={18} className="animate-spin" /> : <RefreshCw size={18} />}
+                        Sync Storage
+                    </motion.button>
+
+                    <motion.button
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={handleSignOut}
+                        className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/[0.05] border border-white/[0.1] text-white/60 hover:text-white hover:bg-white/[0.1] transition-all"
+                    >
+                        <LogOut size={18} />
+                        Sign Out
+                    </motion.button>
+                </div>
             </motion.header>
 
+            {syncStats && (
+                <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    className="mb-8 bg-green-500/10 border border-green-500/20 rounded-xl p-4 text-green-400 text-center"
+                >
+                    Sync Complete! Added {syncStats.added} new images (Found {syncStats.total} total).
+                </motion.div>
+            )}
+
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Review Imports Section */}
+                {uncategorizedImages.length > 0 && (
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="lg:col-span-2"
+                    >
+                        <h2 className="text-xl font-light text-white mb-6 flex items-center gap-2">
+                            <span className="text-[#ff00aa]">Review Imports</span>
+                            <span className="text-sm text-white/40 ml-2">
+                                ({uncategorizedImages.length} uncategorized images)
+                            </span>
+                        </h2>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {uncategorizedImages.map((image) => (
+                                <ReviewCard
+                                    key={image.id}
+                                    image={image}
+                                    onUpdate={() => fetchUncategorized()}
+                                />
+                            ))}
+                        </div>
+                    </motion.div>
+                )}
+
                 {/* Upload Section */}
                 <motion.div
                     initial={{ opacity: 0, x: -20 }}
@@ -457,5 +586,152 @@ export default function AdminDashboardPage() {
                 </motion.div>
             </div>
         </div>
+    );
+}
+
+// Sub-component for reviewing images
+function ReviewCard({ image, onUpdate }: { image: any, onUpdate: () => void }) {
+    const [category, setCategory] = useState('events');
+    const [description, setDescription] = useState(image.description || '');
+    const [isGenerating, setIsGenerating] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
+
+    const handleGenerate = async () => {
+        setIsGenerating(true);
+        try {
+            // Fetch image blob from URL
+            const res = await fetch(image.url);
+            const blob = await res.blob();
+            const file = new File([blob], "temp.jpg", { type: "image/jpeg" });
+
+            // Re-use helper logic 
+            const resizeImageForAI = (file: File): Promise<string> => {
+                return new Promise((resolve) => {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        const img = new Image();
+                        img.onload = () => {
+                            const canvas = document.createElement('canvas');
+                            let width = img.width;
+                            let height = img.height;
+                            const maxDim = 800;
+                            if (width > height && width > maxDim) {
+                                height = height * (maxDim / width);
+                                width = maxDim;
+                            } else if (height > maxDim) {
+                                width = width * (maxDim / height);
+                                height = maxDim;
+                            }
+                            canvas.width = width;
+                            canvas.height = height;
+                            const ctx = canvas.getContext('2d');
+                            ctx?.drawImage(img, 0, 0, width, height);
+                            resolve(canvas.toDataURL('image/jpeg', 0.8).split(',')[1]);
+                        };
+                        img.src = e.target?.result as string;
+                    };
+                    reader.readAsDataURL(file);
+                });
+            };
+
+            const base64 = await resizeImageForAI(file);
+            const response = await fetch('/api/generate-description', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ imageBase64: base64, mimeType: 'image/jpeg' }),
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                setDescription(data.description);
+            }
+        } catch (error) {
+            console.error('Error generating description:', error);
+        } finally {
+            setIsGenerating(false);
+        }
+    };
+
+    const handleSave = async () => {
+        setIsSaving(true);
+        try {
+            // Dynamic import to avoid SSR issues
+            const { doc, updateDoc } = await import('firebase/firestore');
+            const { db } = await import('@/lib/firebase');
+
+            await updateDoc(doc(db, 'images', image.id), {
+                category,
+                description,
+                needsReview: false
+            });
+            onUpdate();
+        } catch (error) {
+            console.error('Error saving:', error);
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    const handleDelete = async () => {
+        if (!confirm("Delete this import? This removes it from the gallery database (file stays in storage).")) return;
+        try {
+            const { doc, deleteDoc } = await import('firebase/firestore');
+            const { db } = await import('@/lib/firebase');
+            await deleteDoc(doc(db, 'images', image.id));
+            onUpdate();
+        } catch (e) { console.error(e) }
+    };
+
+    return (
+        <GlassCard intensity="weak" className="p-4 flex flex-col gap-4">
+            <div className="relative h-48 rounded-lg overflow-hidden bg-black/20">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={image.url} alt="Review" className="w-full h-full object-cover" />
+                <div className="absolute top-2 right-2">
+                    <button onClick={handleDelete} className="p-2 bg-black/50 text-white rounded-full hover:bg-red-500/50 transition-colors">
+                        <X size={14} />
+                    </button>
+                </div>
+            </div>
+
+            <div className="grid grid-cols-5 gap-1">
+                {categories.map((cat) => (
+                    <button
+                        key={cat.id}
+                        onClick={() => setCategory(cat.id)}
+                        className={`p-2 rounded-lg border flex justify-center items-center transition-all ${category === cat.id ? 'border-[#00f0ff] bg-[#00f0ff]/10 text-[#00f0ff]' : 'border-white/10 text-white/30 hover:bg-white/5'}`}
+                        title={cat.name}
+                    >
+                        {cat.icon}
+                    </button>
+                ))}
+            </div>
+
+            <div className="relative">
+                <textarea
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    placeholder="Description..."
+                    className="w-full h-24 bg-white/5 border border-white/10 rounded-lg p-3 text-sm text-white focus:outline-none focus:border-[#00f0ff]/50 resize-none"
+                />
+                <button
+                    onClick={handleGenerate}
+                    disabled={isGenerating}
+                    className="absolute bottom-2 right-2 p-1.5 text-[#ff00aa] hover:bg-[#ff00aa]/10 rounded-lg transition-colors disabled:opacity-50"
+                    title="Generate AI Description"
+                >
+                    {isGenerating ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />}
+                </button>
+            </div>
+
+            <button
+                onClick={handleSave}
+                disabled={isSaving}
+                className="w-full py-2 bg-[#00f0ff]/10 border border-[#00f0ff]/20 text-[#00f0ff] rounded-lg hover:bg-[#00f0ff]/20 transition-colors font-medium flex items-center justify-center gap-2 disabled:opacity-50"
+            >
+                {isSaving ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />}
+                Publish
+            </button>
+        </GlassCard>
     );
 }
