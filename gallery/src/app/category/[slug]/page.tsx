@@ -4,26 +4,23 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { CategoryViewer } from '@/components/gallery/CategoryViewer';
 import { getImagesByCategory, ImageData } from '@/lib/galleryService';
+import { useCategories } from '@/hooks/useCategories';
 import { Loader2 } from 'lucide-react';
 import Link from 'next/link';
-
-const categoryTitles: Record<string, string> = {
-    events: 'Events',
-    portraits: 'Portraits',
-    nature: 'Nature',
-    street: 'Street',
-};
 
 export default function CategoryPage() {
     const params = useParams();
     const slug = params.slug as string;
     const [images, setImages] = useState<ImageData[]>([]);
     const [loading, setLoading] = useState(true);
+    const { categories, loading: catsLoading } = useCategories();
 
-    const title = categoryTitles[slug];
+    // Look up title dynamically from Firestore categories
+    const category = categories.find((c) => c.slug === slug);
+    const title = category?.name;
 
     useEffect(() => {
-        if (!title) return;
+        if (catsLoading) return; // Wait for categories to load
 
         const fetchImages = async () => {
             try {
@@ -37,7 +34,16 @@ export default function CategoryPage() {
         };
 
         fetchImages();
-    }, [slug, title]);
+    }, [slug, catsLoading]);
+
+    // Still loading categories or images
+    if (catsLoading || loading) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-[#0a0a0f]">
+                <Loader2 className="w-8 h-8 text-[#00f0ff] animate-spin" />
+            </div>
+        );
+    }
 
     // Invalid category
     if (!title) {
@@ -52,14 +58,6 @@ export default function CategoryPage() {
                         ← Return to gallery
                     </Link>
                 </div>
-            </div>
-        );
-    }
-
-    if (loading) {
-        return (
-            <div className="min-h-screen flex items-center justify-center bg-[#0a0a0f]">
-                <Loader2 className="w-8 h-8 text-[#00f0ff] animate-spin" />
             </div>
         );
     }

@@ -2,26 +2,14 @@
 
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState } from 'react';
-import { Menu, X, Camera, Users, TreePine, Building2, Lock } from 'lucide-react';
+import { Menu, X, Loader2 } from 'lucide-react';
 import Link from 'next/link';
-
-interface Category {
-    name: string;
-    slug: string;
-    icon: React.ReactNode;
-    locked?: boolean;
-}
-
-const categories: Category[] = [
-    { name: 'Events', slug: 'events', icon: <Camera size={20} /> },
-    { name: 'Portraits', slug: 'portraits', icon: <Users size={20} /> },
-    { name: 'Nature', slug: 'nature', icon: <TreePine size={20} /> },
-    { name: 'Street', slug: 'street', icon: <Building2 size={20} /> },
-    { name: 'Artistic', slug: 'artistic', icon: <Lock size={20} />, locked: true },
-];
+import { useCategories } from '@/hooks/useCategories';
+import { getIconByName } from '@/components/admin/CategoryManager';
 
 export function ExpandingMenu() {
     const [isOpen, setIsOpen] = useState(false);
+    const { categories, loading } = useCategories();
 
     return (
         <>
@@ -81,43 +69,49 @@ export function ExpandingMenu() {
                             className="fixed top-24 right-6 z-50 w-80 bg-white/[0.05] backdrop-blur-2xl border border-white/[0.1] rounded-2xl overflow-hidden shadow-2xl"
                         >
                             <div className="p-3">
-                                {categories.map((category, index) => (
-                                    <motion.div
-                                        key={category.slug}
-                                        initial={{ opacity: 0, x: 20 }}
-                                        animate={{ opacity: 1, x: 0 }}
-                                        transition={{ delay: index * 0.05 }}
-                                    >
-                                        <Link
-                                            href={category.locked ? '/artistic' : `/category/${category.slug}`}
-                                            onClick={() => setIsOpen(false)}
-                                            className={`
+                                {loading ? (
+                                    <div className="flex items-center justify-center py-6">
+                                        <Loader2 size={20} className="animate-spin text-[#00f0ff]" />
+                                    </div>
+                                ) : (
+                                    categories.map((category, index) => (
+                                        <motion.div
+                                            key={category.slug}
+                                            initial={{ opacity: 0, x: 20 }}
+                                            animate={{ opacity: 1, x: 0 }}
+                                            transition={{ delay: index * 0.05 }}
+                                        >
+                                            <Link
+                                                href={category.isProtected ? `/${category.slug}` : `/category/${category.slug}`}
+                                                onClick={() => setIsOpen(false)}
+                                                className={`
                         flex items-center gap-5 px-5 py-4 rounded-xl
                         transition-all duration-300 group
-                        ${category.locked
-                                                    ? 'text-[#ff00aa] hover:bg-[#ff00aa]/10'
-                                                    : 'text-white hover:bg-white/10'
-                                                }
-                      `}
-                                        >
-                                            <span className={`
-                        ${category.locked
-                                                    ? 'text-[#ff00aa]'
-                                                    : 'text-[#00f0ff] group-hover:text-white'
-                                                }
+                        ${category.isProtected
+                                                        ? 'text-[#ff00aa] hover:bg-[#ff00aa]/10'
+                                                        : 'text-white hover:bg-white/10'
+                                                    }
+                       `}
+                                            >
+                                                <span className={`
+                        ${category.isProtected
+                                                        ? 'text-[#ff00aa]'
+                                                        : 'text-[#00f0ff] group-hover:text-white'
+                                                    }
                         transition-colors
-                      `}>
-                                                {category.icon}
-                                            </span>
-                                            <span className="font-medium tracking-wide text-lg">{category.name}</span>
-                                            {category.locked && (
-                                                <span className="ml-auto text-xs text-[#ff00aa]/60 tracking-wider font-light uppercase border border-[#ff00aa]/20 px-2 py-1 rounded">
-                                                    Private
+                       `}>
+                                                    {getIconByName(category.icon)}
                                                 </span>
-                                            )}
-                                        </Link>
-                                    </motion.div>
-                                ))}
+                                                <span className="font-medium tracking-wide text-lg">{category.name}</span>
+                                                {category.isProtected && (
+                                                    <span className="ml-auto text-xs text-[#ff00aa]/60 tracking-wider font-light uppercase border border-[#ff00aa]/20 px-2 py-1 rounded">
+                                                        Private
+                                                    </span>
+                                                )}
+                                            </Link>
+                                        </motion.div>
+                                    ))
+                                )}
                             </div>
 
                             {/* Admin Link */}

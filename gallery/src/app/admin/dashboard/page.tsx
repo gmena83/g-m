@@ -8,11 +8,6 @@ import Link from 'next/link';
 import {
     Upload,
     LogOut,
-    Camera,
-    Users,
-    TreePine,
-    Building2,
-    Lock,
     Loader2,
     Sparkles,
     Check,
@@ -20,23 +15,23 @@ import {
     Image as ImageIcon,
     RefreshCw,
     Home,
+    Grid3X3,
+    FolderCog,
 } from 'lucide-react';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { auth, storage, db } from '@/lib/firebase';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { ref, uploadBytesResumable, getDownloadURL, listAll } from 'firebase/storage';
 import { collection, addDoc, serverTimestamp, query, where, getDocs } from 'firebase/firestore';
-
-const categories = [
-    { id: 'events', name: 'Events', icon: <Camera size={18} /> },
-    { id: 'portraits', name: 'Portraits', icon: <Users size={18} /> },
-    { id: 'nature', name: 'Nature', icon: <TreePine size={18} /> },
-    { id: 'street', name: 'Street', icon: <Building2 size={18} /> },
-    { id: 'intimate', name: 'Intimate', icon: <Lock size={18} /> },
-];
+import { useCategories } from '@/hooks/useCategories';
+import { seedDefaultCategories } from '@/lib/categoryService';
+import { getIconByName } from '@/components/admin/CategoryManager';
+import { ImageRelabeler } from '@/components/admin/ImageRelabeler';
+import { CategoryManager } from '@/components/admin/CategoryManager';
 
 export default function AdminDashboardPage() {
     const router = useRouter();
+    const { categories, loading: categoriesLoading, refresh: refreshCategories } = useCategories();
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -49,6 +44,14 @@ export default function AdminDashboardPage() {
     const [uploadSuccess, setUploadSuccess] = useState(false);
     const [isSyncing, setIsSyncing] = useState(false);
     const [syncStats, setSyncStats] = useState<{ added: number; total: number } | null>(null);
+    const [activeTab, setActiveTab] = useState<'upload' | 'relabel' | 'categories'>('upload');
+
+    // Seed default categories on first load if needed
+    useEffect(() => {
+        if (isAuthenticated && !categoriesLoading && categories.length === 0) {
+            seedDefaultCategories().then(() => refreshCategories());
+        }
+    }, [isAuthenticated, categoriesLoading, categories.length, refreshCategories]);
 
     useEffect(() => {
         if (!auth) {
@@ -383,6 +386,7 @@ export default function AdminDashboardPage() {
                                 <ReviewCard
                                     key={image.id}
                                     image={image}
+                                    categories={categories}
                                     onUpdate={() => fetchUncategorized()}
                                 />
                             ))}
@@ -465,16 +469,16 @@ export default function AdminDashboardPage() {
                                     {categories.map((cat) => (
                                         <button
                                             key={cat.id}
-                                            onClick={() => setSelectedCategory(cat.id)}
+                                            onClick={() => setSelectedCategory(cat.slug)}
                                             className={`
                         flex flex-col items-center gap-1 p-3 rounded-xl border transition-all
-                        ${selectedCategory === cat.id
+                        ${selectedCategory === cat.slug
                                                     ? 'border-[#00f0ff] bg-[#00f0ff]/10 text-[#00f0ff]'
                                                     : 'border-white/[0.1] text-white/40 hover:border-white/[0.3] hover:text-white'
                                                 }
-                      `}
+                       `}
                                         >
-                                            {cat.icon}
+                                            {getIconByName(cat.icon)}
                                             <span className="text-[10px]">{cat.name}</span>
                                         </button>
                                     ))}
@@ -594,12 +598,84 @@ export default function AdminDashboardPage() {
                     </GlassCard>
                 </motion.div>
             </div>
+
+            {/* Tab Navigation */}
+            <div className="flex gap-2 mt-8 mb-4">
+                <button
+                    onClick={() => setActiveTab('upload')}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm transition-all ${activeTab === 'upload'
+                        ? 'bg-[#00f0ff]/10 border border-[#00f0ff]/20 text-[#00f0ff]'
+                        : 'bg-white/[0.03] border border-white/[0.05] text-white/40 hover:text-white/60'
+                        }`}
+                >
+                    <Upload size={16} />
+                    Upload
+                </button>
+                <button
+                    onClick={() => setActiveTab('relabel')}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm transition-all ${activeTab === 'relabel'
+                        ? 'bg-[#ff00aa]/10 border border-[#ff00aa]/20 text-[#ff00aa]'
+                        : 'bg-white/[0.03] border border-white/[0.05] text-white/40 hover:text-white/60'
+                        }`}
+                >
+                    <Grid3X3 size={16} />
+                    Relabel Images
+                </button>
+                <button
+                    onClick={() => setActiveTab('categories')}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm transition-all ${activeTab === 'categories'
+                        ? 'bg-[#a78bfa]/10 border border-[#a78bfa]/20 text-[#a78bfa]'
+                        : 'bg-white/[0.03] border border-white/[0.05] text-white/40 hover:text-white/60'
+                        }`}
+                >
+                    <FolderCog size={16} />
+                    Manage Categories
+                </button>
+            </div>
+
+            {/* Tab Content */}
+            {activeTab === 'relabel' && (
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                >
+                    <GlassCard intensity="medium" glow="none" hover={false} className="p-6">
+                        <h2 className="text-lg font-medium text-white mb-4 flex items-center gap-2">
+                            <Grid3X3 size={20} className="text-[#ff00aa]" />
+                            Relabel Gallery Images
+                        </h2>
+                        <p className="text-sm text-white/40 mb-4">
+                            Click any image&apos;s dropdown to quickly change its category.
+                        </p>
+                        <ImageRelabeler categories={categories} />
+                    </GlassCard>
+                </motion.div>
+            )}
+
+            {activeTab === 'categories' && (
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="max-w-xl"
+                >
+                    <GlassCard intensity="medium" glow="none" hover={false} className="p-6">
+                        <h2 className="text-lg font-medium text-white mb-4 flex items-center gap-2">
+                            <FolderCog size={20} className="text-[#a78bfa]" />
+                            Manage Categories
+                        </h2>
+                        <p className="text-sm text-white/40 mb-4">
+                            Add, remove, or reorder gallery categories. Changes take effect immediately across the site.
+                        </p>
+                        <CategoryManager categories={categories} onRefresh={refreshCategories} />
+                    </GlassCard>
+                </motion.div>
+            )}
         </div>
     );
 }
 
 // Sub-component for reviewing images
-function ReviewCard({ image, onUpdate }: { image: any, onUpdate: () => void }) {
+function ReviewCard({ image, categories, onUpdate }: { image: any, categories: any[], onUpdate: () => void }) {
     const [category, setCategory] = useState('events');
     const [description, setDescription] = useState(image.description || '');
     const [isGenerating, setIsGenerating] = useState(false);
@@ -707,11 +783,11 @@ function ReviewCard({ image, onUpdate }: { image: any, onUpdate: () => void }) {
                 {categories.map((cat) => (
                     <button
                         key={cat.id}
-                        onClick={() => setCategory(cat.id)}
-                        className={`p-2 rounded-lg border flex justify-center items-center transition-all ${category === cat.id ? 'border-[#00f0ff] bg-[#00f0ff]/10 text-[#00f0ff]' : 'border-white/10 text-white/30 hover:bg-white/5'}`}
+                        onClick={() => setCategory(cat.slug)}
+                        className={`p-2 rounded-lg border flex justify-center items-center transition-all ${category === cat.slug ? 'border-[#00f0ff] bg-[#00f0ff]/10 text-[#00f0ff]' : 'border-white/10 text-white/30 hover:bg-white/5'}`}
                         title={cat.name}
                     >
-                        {cat.icon}
+                        {getIconByName(cat.icon)}
                     </button>
                 ))}
             </div>

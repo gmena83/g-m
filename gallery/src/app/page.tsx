@@ -4,22 +4,13 @@ import { Logo } from '@/components/ui/Logo';
 import { ExpandingMenu } from '@/components/ui/ExpandingMenu';
 import { Footer } from '@/components/ui/Footer';
 import { LensFlare } from '@/components/ui/LensFlare';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { getAllImages, ImageData } from '@/lib/galleryService';
+import { useCategories } from '@/hooks/useCategories';
 import { Loader2 } from 'lucide-react';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useRef } from 'react';
-
-// The categories displayed as hero slides
-const heroCategories = [
-  { slug: 'events', title: 'Events', href: '/category/events' },
-  { slug: 'portraits', title: 'Portraits', href: '/category/portraits' },
-  { slug: 'nature', title: 'Nature', href: '/category/nature' },
-  { slug: 'street', title: 'Street', href: '/category/street' },
-  { slug: 'artistic', title: 'Artistic', href: '/artistic' },
-];
 
 // Fallback SFW image for artistic category when no images exist
 const ARTISTIC_PLACEHOLDER = 'https://images.unsplash.com/photo-1554048612-b6a482bc67e5?w=1920&q=80';
@@ -27,6 +18,7 @@ const ARTISTIC_PLACEHOLDER = 'https://images.unsplash.com/photo-1554048612-b6a48
 export default function HomePage() {
   const [allImages, setAllImages] = useState<ImageData[]>([]);
   const [loading, setLoading] = useState(true);
+  const { categories, loading: catsLoading } = useCategories();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -42,7 +34,7 @@ export default function HomePage() {
     fetchData();
   }, []);
 
-  if (loading) {
+  if (loading || catsLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#0a0a0f]">
         <Loader2 className="w-8 h-8 text-[#00f0ff] animate-spin" />
@@ -64,6 +56,21 @@ export default function HomePage() {
     return img?.url || null;
   };
 
+  // Build dynamic hero categories from Firestore (deduplicate by slug)
+  const seen = new Set<string>();
+  const heroCategories = categories
+    .filter((cat) => {
+      if (seen.has(cat.slug)) return false;
+      seen.add(cat.slug);
+      return true;
+    })
+    .map((cat) => ({
+      id: cat.id,
+      slug: cat.slug,
+      title: cat.name,
+      href: cat.isProtected ? `/${cat.slug}` : `/category/${cat.slug}`,
+    }));
+
   // Build category links for the footer
   const footerCategories = heroCategories.map((cat) => ({
     name: cat.title,
@@ -72,11 +79,11 @@ export default function HomePage() {
     imageUrl: getCategoryImage(cat.slug) || undefined,
   }));
 
-  // Filter categories that have at least one image (or artistic which always shows)
+  // Filter categories that have at least one image (or protected ones which always show)
   const activeCategories = heroCategories.filter((cat) => {
-    if (cat.slug === 'artistic') return true;
-    const matchSlugs = [cat.slug];
-    return allImages.some((i) => matchSlugs.includes(i.category.toLowerCase()));
+    const catData = categories.find((c) => c.slug === cat.slug);
+    if (catData?.isProtected) return true;
+    return allImages.some((i) => i.category.toLowerCase() === cat.slug);
   });
 
   return (
@@ -89,7 +96,7 @@ export default function HomePage() {
         {activeCategories.length > 0 ? (
           <div>
             {activeCategories.map((cat, index) => (
-              <div key={cat.slug}>
+              <div key={cat.id}>
                 <HeroSlide
                   title={cat.title}
                   href={cat.href}
