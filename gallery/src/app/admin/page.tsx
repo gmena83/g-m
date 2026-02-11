@@ -81,7 +81,7 @@ export default function AdminLoginPage() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5 }}
             >
-                <GlassCard intensity="strong" glow="cyan" hover={false} className="w-full max-w-xl p-14">
+                <GlassCard intensity="strong" glow="cyan" hover={false} className="w-full max-w-2xl p-16">
                     {/* Logo */}
                     <motion.div
                         initial={{ scale: 0 }}

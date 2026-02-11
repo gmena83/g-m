@@ -17,7 +17,7 @@ const categories: Category[] = [
     { name: 'Portraits', slug: 'portraits', icon: <Users size={20} /> },
     { name: 'Nature', slug: 'nature', icon: <TreePine size={20} /> },
     { name: 'Street', slug: 'street', icon: <Building2 size={20} /> },
-    { name: 'Intimate', slug: 'intimate', icon: <Lock size={20} />, locked: true },
+    { name: 'Artistic', slug: 'artistic', icon: <Lock size={20} />, locked: true },
 ];
 
 export function ExpandingMenu() {
@@ -89,7 +89,7 @@ export function ExpandingMenu() {
                                         transition={{ delay: index * 0.05 }}
                                     >
                                         <Link
-                                            href={category.locked ? '/intimate' : `/category/${category.slug}`}
+                                            href={category.locked ? '/artistic' : `/category/${category.slug}`}
                                             onClick={() => setIsOpen(false)}
                                             className={`
                         flex items-center gap-5 px-5 py-4 rounded-xl
@@ -125,7 +125,7 @@ export function ExpandingMenu() {
                                 <Link
                                     href="/admin"
                                     onClick={() => setIsOpen(false)}
-                                    className="flex items-center gap-5 px-5 py-4 rounded-xl text-white/40 hover:text-white hover:bg-white/5 transition-all"
+                                    className="flex items-center justify-center px-5 py-4 rounded-xl text-white/40 hover:text-white hover:bg-white/5 transition-all"
                                 >
                                     <span className="text-sm tracking-widest uppercase">Admin Portal</span>
                                 </Link>

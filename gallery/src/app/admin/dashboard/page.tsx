@@ -3,6 +3,7 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 import {
     Upload,
@@ -18,6 +19,7 @@ import {
     X,
     Image as ImageIcon,
     RefreshCw,
+    Home,
 } from 'lucide-react';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { auth, storage, db } from '@/lib/firebase';
@@ -321,6 +323,13 @@ export default function AdminDashboardPage() {
                     <p className="text-sm text-white/40">Upload and manage your gallery</p>
                 </div>
                 <div className="flex gap-3">
+                    <Link
+                        href="/"
+                        className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/[0.05] border border-white/[0.1] text-white/60 hover:text-white hover:bg-white/[0.1] transition-all"
+                    >
+                        <Home size={18} />
+                        Homepage
+                    </Link>
                     <motion.button
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}

@@ -1,12 +1,11 @@
-import { Logo } from '@/components/ui/Logo';
-import { ExpandingMenu } from '@/components/ui/ExpandingMenu';
-import { CinematicScroll } from '@/components/gallery/CinematicScroll';
-import { getImagesByCategory } from '@/lib/mockData';
-import { notFound } from 'next/navigation';
+'use client';
 
-interface CategoryPageProps {
-    params: Promise<{ slug: string }>;
-}
+import { useEffect, useState } from 'react';
+import { useParams } from 'next/navigation';
+import { CategoryViewer } from '@/components/gallery/CategoryViewer';
+import { getImagesByCategory, ImageData } from '@/lib/galleryService';
+import { Loader2 } from 'lucide-react';
+import Link from 'next/link';
 
 const categoryTitles: Record<string, string> = {
     events: 'Events',
@@ -15,36 +14,72 @@ const categoryTitles: Record<string, string> = {
     street: 'Street',
 };
 
-export default async function CategoryPage({ params }: CategoryPageProps) {
-    const { slug } = await params;
+export default function CategoryPage() {
+    const params = useParams();
+    const slug = params.slug as string;
+    const [images, setImages] = useState<ImageData[]>([]);
+    const [loading, setLoading] = useState(true);
 
-    if (!['events', 'portraits', 'nature', 'street'].includes(slug)) {
-        notFound();
+    const title = categoryTitles[slug];
+
+    useEffect(() => {
+        if (!title) return;
+
+        const fetchImages = async () => {
+            try {
+                const data = await getImagesByCategory(slug);
+                setImages(data);
+            } catch (error) {
+                console.error('Error fetching category images:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchImages();
+    }, [slug, title]);
+
+    // Invalid category
+    if (!title) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-[#0a0a0f]">
+                <div className="text-center">
+                    <h1 className="text-2xl font-light text-white mb-4">Category not found</h1>
+                    <Link
+                        href="/"
+                        className="text-[#00f0ff] hover:text-white transition-colors"
+                    >
+                        ← Return to gallery
+                    </Link>
+                </div>
+            </div>
+        );
     }
 
-    const images = getImagesByCategory(slug);
-
-    return (
-        <main className="relative min-h-screen">
-            <Logo />
-            <ExpandingMenu />
-
-            {/* Category Header */}
-            <div className="fixed top-6 left-1/2 -translate-x-1/2 z-40">
-                <span className="text-[10px] font-medium tracking-[0.5em] text-[#00f0ff] uppercase bg-black/30 backdrop-blur-sm px-4 py-2 rounded-full">
-                    {categoryTitles[slug] || slug}
-                </span>
+    if (loading) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-[#0a0a0f]">
+                <Loader2 className="w-8 h-8 text-[#00f0ff] animate-spin" />
             </div>
+        );
+    }
 
-            {/* Cinematic Gallery */}
-            <CinematicScroll images={images} />
+    if (images.length === 0) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-[#0a0a0f]">
+                <div className="text-center">
+                    <h1 className="text-2xl font-light text-white mb-2">{title}</h1>
+                    <p className="text-white/40 mb-6">No images in this collection yet</p>
+                    <Link
+                        href="/"
+                        className="text-[#00f0ff] hover:text-white transition-colors"
+                    >
+                        ← Return to gallery
+                    </Link>
+                </div>
+            </div>
+        );
+    }
 
-            {/* Footer */}
-            <footer className="relative z-10 py-20 text-center bg-[#0a0a0f]">
-                <p className="text-xs tracking-[0.5em] text-white/20 uppercase">
-                    G&M Photography © {new Date().getFullYear()}
-                </p>
-            </footer>
-        </main>
-    );
+    return <CategoryViewer images={images} categoryTitle={title} />;
 }
