@@ -13,7 +13,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 
 // Fallback SFW image for artistic category when no images exist
-const ARTISTIC_PLACEHOLDER = 'https://images.unsplash.com/photo-1554048612-b6a482bc67e5?w=1920&q=80';
+const ARTISTIC_PLACEHOLDER = 'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?w=1920&q=80';
 
 export default function HomePage() {
   const [allImages, setAllImages] = useState<ImageData[]>([]);

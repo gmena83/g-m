@@ -128,7 +128,7 @@ export function CategoryViewer({ images, categoryTitle }: CategoryViewerProps) {
                 transition={{ delay: 0.3 }}
                 className="absolute top-6 left-6 z-60"
             >
-                <span className="text-[10px] font-medium tracking-[0.5em] text-[#00f0ff] uppercase bg-black/30 backdrop-blur-sm px-4 py-2 rounded-full">
+                <span className="text-xl font-light tracking-[0.4em] text-[#00f0ff] uppercase bg-white/5 backdrop-blur-md px-8 py-3 rounded-full border border-white/10 shadow-lg shadow-[#00f0ff]/10">
                     {categoryTitle}
                 </span>
             </motion.div>

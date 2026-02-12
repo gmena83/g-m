@@ -42,7 +42,7 @@
 
 html {
   scroll-behavior: smooth;
-  scroll-snap-type: y mandatory;
+  scroll-snap-type: y proximity;
 }
 
 body {
@@ -75,16 +75,16 @@ body {
 /* Glassmorphism Utilities */
 .glass {
   background: var(--glass-bg);
-  backdrop-filter: blur(var(--glass-blur));
   -webkit-backdrop-filter: blur(var(--glass-blur));
+  backdrop-filter: blur(var(--glass-blur));
   border: 1px solid var(--glass-border);
   border-radius: 16px;
 }
 
 .glass-strong {
   background: rgba(255, 255, 255, 0.08);
-  backdrop-filter: blur(30px);
   -webkit-backdrop-filter: blur(30px);
+  backdrop-filter: blur(30px);
   border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 20px;
 }
@@ -243,6 +243,7 @@ body {
 /* Interactive Button */
 .btn-glass {
   background: var(--glass-bg);
+  -webkit-backdrop-filter: blur(10px);
   backdrop-filter: blur(10px);
   border: 1px solid var(--glass-border);
   color: var(--text-primary);
@@ -305,31 +306,27 @@ body {
 .image-overlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(
-    to top,
-    rgba(10, 10, 15, 0.95) 0%,
-    rgba(10, 10, 15, 0.4) 40%,
-    rgba(10, 10, 15, 0.1) 60%,
-    rgba(10, 10, 15, 0.3) 100%
-  );
+  background: linear-gradient(to top,
+      rgba(10, 10, 15, 0.95) 0%,
+      rgba(10, 10, 15, 0.4) 40%,
+      rgba(10, 10, 15, 0.1) 60%,
+      rgba(10, 10, 15, 0.3) 100%);
   pointer-events: none;
 }
 
 .image-overlay-subtle {
   position: absolute;
   inset: 0;
-  background: radial-gradient(
-    ellipse at center,
-    transparent 0%,
-    rgba(10, 10, 15, 0.25) 100%
-  );
+  background: radial-gradient(ellipse at center,
+      transparent 0%,
+      rgba(10, 10, 15, 0.25) 100%);
   pointer-events: none;
 }
 
 .glass-strong {
   background: rgba(255, 255, 255, 0.04);
-  backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 255, 255, 0.08);
   box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
 }
