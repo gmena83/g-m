@@ -1,0 +1,151 @@
+
+> gallery@0.1.0 lint
+> eslint
+
+
+D:\Menatech\Antigravity\g&m\gallery\src\app\admin\dashboard\page.tsx
+  230:68  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                 @typescript-eslint/no-explicit-any
+  446:37  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+  694:63  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                 @typescript-eslint/no-explicit-any
+  694:80  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                 @typescript-eslint/no-explicit-any
+
+D:\Menatech\Antigravity\g&m\gallery\src\app\admin\page.tsx
+    4:20  warning  'useEffect' is defined but never used                                                                                                                  @typescript-eslint/no-unused-vars
+  182:25  error    Do not use an `<a>` element to navigate to `/`. Use `<Link />` from `next/link` instead. See: https://nextjs.org/docs/messages/no-html-link-for-pages  @next/next/no-html-link-for-pages
+  341:25  error    Do not use an `<a>` element to navigate to `/`. Use `<Link />` from `next/link` instead. See: https://nextjs.org/docs/messages/no-html-link-for-pages  @next/next/no-html-link-for-pages
+
+D:\Menatech\Antigravity\g&m\gallery\src\app\artistic\page.tsx
+  21:13  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+D:\Menatech\Antigravity\g&m\gallery\src\app\artistic\page.tsx:21:13
+  19 |         const access = sessionStorage.getItem('intimate-access');
+  20 |         if (access === 'granted') {
+> 21 |             setHasAccess(true);
+     |             ^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  22 |         }
+  23 |         setIsLoading(false);
+  24 |     }, []);                                                               react-hooks/set-state-in-effect
+  28:13  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+D:\Menatech\Antigravity\g&m\gallery\src\app\artistic\page.tsx:28:13
+  26 |     useEffect(() => {
+  27 |         if (hasAccess) {
+> 28 |             setImagesLoading(true);
+     |             ^^^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  29 |             // Fetch both 'artistic' and 'intimate' categories for backwards compat
+  30 |             Promise.all([
+  31 |                 getImagesByCategory('artistic'),  react-hooks/set-state-in-effect
+
+D:\Menatech\Antigravity\g&m\gallery\src\app\intimate\page.tsx
+  36:13  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+D:\Menatech\Antigravity\g&m\gallery\src\app\intimate\page.tsx:36:13
+  34 |         const access = sessionStorage.getItem('intimate-access');
+  35 |         if (access === 'granted') {
+> 36 |             setHasAccess(true);
+     |             ^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  37 |         }
+  38 |         setIsLoading(false);
+  39 |     }, []);  react-hooks/set-state-in-effect
+
+D:\Menatech\Antigravity\g&m\gallery\src\app\layout.tsx
+  26:9   warning  Custom fonts not added in `pages/_document.js` will only load for a single page. This is discouraged. See: https://nextjs.org/docs/messages/no-page-custom-font                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             @next/next/no-page-custom-font
+  36:26  error    Error: Cannot call impure function during render
+
+`Math.random` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).
+
+D:\Menatech\Antigravity\g&m\gallery\src\app\layout.tsx:36:26
+  34 |               className="particle"
+  35 |               style={{
+> 36 |                 left: `${Math.random() * 100}%`,
+     |                          ^^^^^^^^^^^^^ Cannot call impure function
+  37 |                 animationDelay: `${Math.random() * 20}s`,
+  38 |                 animationDuration: `${15 + Math.random() * 15}s`,
+  39 |               }}  react-hooks/purity
+  37:36  error    Error: Cannot call impure function during render
+
+`Math.random` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).
+
+D:\Menatech\Antigravity\g&m\gallery\src\app\layout.tsx:37:36
+  35 |               style={{
+  36 |                 left: `${Math.random() * 100}%`,
+> 37 |                 animationDelay: `${Math.random() * 20}s`,
+     |                                    ^^^^^^^^^^^^^ Cannot call impure function
+  38 |                 animationDuration: `${15 + Math.random() * 15}s`,
+  39 |               }}
+  40 |             />            react-hooks/purity
+  38:44  error    Error: Cannot call impure function during render
+
+`Math.random` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).
+
+D:\Menatech\Antigravity\g&m\gallery\src\app\layout.tsx:38:44
+  36 |                 left: `${Math.random() * 100}%`,
+  37 |                 animationDelay: `${Math.random() * 20}s`,
+> 38 |                 animationDuration: `${15 + Math.random() * 15}s`,
+     |                                            ^^^^^^^^^^^^^ Cannot call impure function
+  39 |               }}
+  40 |             />
+  41 |           ))}             react-hooks/purity
+
+D:\Menatech\Antigravity\g&m\gallery\src\components\admin\ImageRelabeler.tsx
+   7:10  warning  'GlassCard' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    @typescript-eslint/no-unused-vars
+  29:9   error    Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+D:\Menatech\Antigravity\g&m\gallery\src\components\admin\ImageRelabeler.tsx:29:9
+  27 |
+  28 |     useEffect(() => {
+> 29 |         fetchImages();
+     |         ^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  30 |     }, []);
+  31 |
+  32 |     const handleCategoryChange = async (imageId: string, newCategory: string) => {  react-hooks/set-state-in-effect
+
+D:\Menatech\Antigravity\g&m\gallery\src\components\gallery\ImageViewer.tsx
+    7:31  warning  'Loader2' is defined but never used                              @typescript-eslint/no-unused-vars
+  160:41  error    `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  160:55  error    `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+
+D:\Menatech\Antigravity\g&m\gallery\src\hooks\useVoiceNarration.ts
+  29:9  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+D:\Menatech\Antigravity\g&m\gallery\src\hooks\useVoiceNarration.ts:29:9
+  27 |         }
+  28 |
+> 29 |         setState((prev) => ({ ...prev, isSupported: true }));
+     |         ^^^^^^^^ Avoid calling setState() directly within an effect
+  30 |
+  31 |         const loadVoices = () => {
+  32 |             const availableVoices = speechSynthesis.getVoices();  react-hooks/set-state-in-effect
+
+Ô£û 20 problems (15 errors, 5 warnings)
+
