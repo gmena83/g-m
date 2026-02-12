@@ -12,7 +12,7 @@ export async function POST(req: Request) {
         // Default to a deep, slow voice if not provided (using a placeholder ID or a known good default)
         // '21m00Tcm4TlvDq8ikWAM' is Rachel (default), let's look for a deeper one or use a specific ID if known.
         // For now, allow override or default to 'ErXwobaYiN019PkySvjV' (Antoni - often good for narration)
-        const VOICE_ID = voiceId || 'ErXwobaYiN019PkySvjV';
+        const VOICE_ID = voiceId || 'jvcMcno3QtjOzGtfpjoI'; // User selected voice (Eric?)
 
         if (!ELEVENLABS_API_KEY) {
             console.error('ELEVENLABS_API_KEY is not defined');
