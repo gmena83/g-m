@@ -109,7 +109,7 @@ export function CategoryViewer({ images, categoryTitle }: CategoryViewerProps) {
         // Determine text to read
         const textToRead = language === 'en'
             ? currentImage.description
-            : (currentImage.descriptionEs || currentImage.description); // Fallback to EN if ES missing
+            : (currentImage.descriptionEs || "Descripción en español no disponible.");
 
         if (!textToRead) return;
 
@@ -179,7 +179,7 @@ export function CategoryViewer({ images, categoryTitle }: CategoryViewerProps) {
 
     const currentDescription = language === 'en'
         ? currentImage.description
-        : (currentImage.descriptionEs || currentImage.description);
+        : (currentImage.descriptionEs || "Descripción en español no disponible.");
 
     return (
         <div
