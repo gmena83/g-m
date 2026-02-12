@@ -3,8 +3,8 @@
 import { motion, AnimatePresence, Variants } from 'framer-motion';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useState, useCallback, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, Home } from 'lucide-react';
+import { useState, useCallback, useEffect, useRef } from 'react';
+import { ChevronLeft, ChevronRight, Home, Eye, EyeOff, Languages, Volume2, VolumeX, Loader2 } from 'lucide-react';
 
 interface ImageData {
     id: string;
@@ -12,6 +12,7 @@ interface ImageData {
     thumbnailUrl?: string;
     category: string;
     description?: string;
+    descriptionEs?: string;
 }
 
 interface CategoryViewerProps {
@@ -25,7 +26,26 @@ export function CategoryViewer({ images, categoryTitle }: CategoryViewerProps) {
     const [showThumbnails, setShowThumbnails] = useState(false);
     const [thumbnailTimeout, setThumbnailTimeout] = useState<NodeJS.Timeout | null>(null);
 
+    // Feature State
+    const [showDescription, setShowDescription] = useState(true);
+    const [language, setLanguage] = useState<'en' | 'es'>('en');
+    const [isPlaying, setIsPlaying] = useState(false);
+    const [isLoadingAudio, setIsLoadingAudio] = useState(false);
+
+    // Audio Ref
+    const audioRef = useRef<HTMLAudioElement | null>(null);
+
     const currentImage = images[currentIndex];
+
+    // Reset audio when image changes
+    useEffect(() => {
+        if (audioRef.current) {
+            audioRef.current.pause();
+            audioRef.current = null;
+        }
+        setIsPlaying(false);
+        setIsLoadingAudio(false);
+    }, [currentIndex]);
 
     const goTo = useCallback((index: number) => {
         if (index === currentIndex || index < 0 || index >= images.length) return;
@@ -53,12 +73,13 @@ export function CategoryViewer({ images, categoryTitle }: CategoryViewerProps) {
             if (e.key === 'ArrowRight') goNext();
             if (e.key === 'ArrowLeft') goPrev();
             if (e.key === 'Escape') window.location.href = '/';
+            // Toggle controls shortcuts could be added here
         };
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [goNext, goPrev]);
 
-    // Handle thumbnail visibility on mouse move near bottom
+    // Handle thumbnail visibility
     const handleMouseMove = useCallback((e: React.MouseEvent) => {
         const threshold = window.innerHeight - 150;
         if (e.clientY > threshold) {
@@ -74,6 +95,56 @@ export function CategoryViewer({ images, categoryTitle }: CategoryViewerProps) {
             }
         }
     }, [thumbnailTimeout]);
+
+    // Toggle Audio Logic
+    const toggleAudio = async () => {
+        if (isPlaying) {
+            if (audioRef.current) {
+                audioRef.current.pause();
+                setIsPlaying(false);
+            }
+            return;
+        }
+
+        // Determine text to read
+        const textToRead = language === 'en'
+            ? currentImage.description
+            : (currentImage.descriptionEs || currentImage.description); // Fallback to EN if ES missing
+
+        if (!textToRead) return;
+
+        setIsLoadingAudio(true);
+
+        try {
+            // Check if we already have this audio helper?
+            // For now, fetch from our new API
+            const response = await fetch('/api/narrate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    text: textToRead,
+                    // Optional: voiceId can be passed here if we want different voices for different categories
+                    // voiceData: { ... } 
+                }),
+            });
+
+            if (!response.ok) throw new Error('Failed to fetch audio');
+
+            const blob = await response.blob();
+            const url = URL.createObjectURL(blob);
+
+            const audio = new Audio(url);
+            audioRef.current = audio;
+
+            audio.onended = () => setIsPlaying(false);
+            audio.play();
+            setIsPlaying(true);
+        } catch (error) {
+            console.error('Audio playback failed:', error);
+        } finally {
+            setIsLoadingAudio(false);
+        }
+    };
 
     // 3D flip animation variants
     const flipVariants: Variants = {
@@ -106,6 +177,10 @@ export function CategoryViewer({ images, categoryTitle }: CategoryViewerProps) {
 
     if (!currentImage) return null;
 
+    const currentDescription = language === 'en'
+        ? currentImage.description
+        : (currentImage.descriptionEs || currentImage.description);
+
     return (
         <div
             className="fixed inset-0 z-50 bg-[#0a0a0f] overflow-hidden"
@@ -121,17 +196,75 @@ export function CategoryViewer({ images, categoryTitle }: CategoryViewerProps) {
                 <span className="text-sm font-medium">Home</span>
             </Link>
 
-            {/* Category Badge */}
-            <motion.div
-                initial={{ opacity: 0, y: -20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3 }}
-                className="absolute top-6 left-6 z-60"
-            >
-                <span className="text-xl font-light tracking-[0.4em] text-[#00f0ff] uppercase bg-white/5 backdrop-blur-md px-8 py-3 rounded-full border border-white/10 shadow-lg shadow-[#00f0ff]/10">
-                    {categoryTitle}
-                </span>
-            </motion.div>
+            {/* HEADER AREA: Title + Controls */}
+            <div className="absolute top-6 left-6 z-60 flex flex-col gap-4 items-start">
+
+                {/* Category Title */}
+                <motion.div
+                    initial={{ opacity: 0, y: -20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.3 }}
+                >
+                    <span className="text-xl font-light tracking-[0.4em] text-[#00f0ff] uppercase bg-white/5 backdrop-blur-md px-8 py-3 rounded-full border border-white/10 shadow-lg shadow-[#00f0ff]/10">
+                        {categoryTitle}
+                    </span>
+                </motion.div>
+
+                {/* Controls Bar */}
+                <motion.div
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.4 }}
+                    className="flex items-center gap-2 bg-black/40 backdrop-blur-md border border-white/10 rounded-full px-4 py-2"
+                >
+                    {/* Toggle Description Visibility */}
+                    <button
+                        onClick={() => setShowDescription(!showDescription)}
+                        className={`p-2 rounded-full transition-colors ${showDescription ? 'text-[#00f0ff] bg-white/10' : 'text-white/50 hover:text-white'}`}
+                        title={showDescription ? "Hide Description" : "Show Description"}
+                    >
+                        {showDescription ? <Eye size={18} /> : <EyeOff size={18} />}
+                    </button>
+
+                    <div className="w-px h-4 bg-white/10" />
+
+                    {/* Check if description exists before enabling lang/audio */}
+                    {currentDescription ? (
+                        <>
+                            {/* Language Toggle */}
+                            <button
+                                onClick={() => setLanguage(prev => prev === 'en' ? 'es' : 'en')}
+                                className="flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium tracking-wider text-white hover:bg-white/10 transition-colors"
+                            >
+                                <Languages size={14} className="text-[#ff00aa]" />
+                                <span className={language === 'en' ? 'text-white' : 'text-white/50'}>EN</span>
+                                <span className="text-white/20">|</span>
+                                <span className={language === 'es' ? 'text-white' : 'text-white/50'}>ES</span>
+                            </button>
+
+                            <div className="w-px h-4 bg-white/10" />
+
+                            {/* Audio Toggle */}
+                            <button
+                                onClick={toggleAudio}
+                                disabled={isLoadingAudio}
+                                className={`p-2 rounded-full transition-colors ${isPlaying ? 'text-[#ff00aa] bg-white/10' : 'text-white/50 hover:text-white'}`}
+                                title={isPlaying ? "Stop Narration" : "Play Narration"}
+                            >
+                                {isLoadingAudio ? (
+                                    <Loader2 size={18} className="animate-spin text-[#ff00aa]" />
+                                ) : isPlaying ? (
+                                    <Volume2 size={18} />
+                                ) : (
+                                    <VolumeX size={18} />
+                                )}
+                            </button>
+                        </>
+                    ) : (
+                        <span className="text-xs text-white/30 px-2 italic">No description</span>
+                    )}
+                </motion.div>
+            </div>
 
             {/* Image Counter */}
             <div className="absolute top-6 left-1/2 -translate-x-1/2 z-60">
@@ -155,7 +288,7 @@ export function CategoryViewer({ images, categoryTitle }: CategoryViewerProps) {
                     >
                         <Image
                             src={currentImage.url}
-                            alt={currentImage.description || categoryTitle}
+                            alt={currentDescription || categoryTitle}
                             fill
                             className="object-contain"
                             priority
@@ -198,20 +331,25 @@ export function CategoryViewer({ images, categoryTitle }: CategoryViewerProps) {
                 </motion.button>
             )}
 
-            {/* Description */}
-            {currentImage.description && (
-                <motion.div
-                    key={`desc-${currentImage.id}`}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.4 }}
-                    className="absolute bottom-28 left-1/2 -translate-x-1/2 z-50 max-w-xl text-center"
-                >
-                    <p className="text-sm text-white/50 italic leading-relaxed px-6">
-                        &ldquo;{currentImage.description}&rdquo;
-                    </p>
-                </motion.div>
-            )}
+            {/* Description - Styled Block */}
+            <AnimatePresence>
+                {showDescription && currentDescription && (
+                    <motion.div
+                        key={`desc-${currentImage.id}-${language}`}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 10 }}
+                        transition={{ delay: 0.2 }}
+                        className="absolute bottom-32 left-1/2 -translate-x-1/2 z-50 w-full max-w-2xl px-6 pointer-events-none"
+                    >
+                        <div className="bg-black/60 backdrop-blur-md border border-white/5 p-6 rounded-2xl shadow-2xl">
+                            <p className="text-base text-white/90 leading-relaxed font-light text-center">
+                                &ldquo;{currentDescription}&rdquo;
+                            </p>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
             {/* Thumbnail Strip (appears on hover near bottom) */}
             <AnimatePresence>
@@ -221,7 +359,7 @@ export function CategoryViewer({ images, categoryTitle }: CategoryViewerProps) {
                         animate={{ y: 0, opacity: 1 }}
                         exit={{ y: 100, opacity: 0 }}
                         transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-                        className="absolute bottom-0 left-0 right-0 z-60 bg-gradient-to-t from-black/80 to-transparent pt-8 pb-4 px-6"
+                        className="absolute bottom-0 left-0 right-0 z-60 bg-gradient-to-t from-black/90 to-transparent pt-12 pb-6 px-6"
                     >
                         <div className="flex items-center justify-center gap-2 overflow-x-auto max-w-4xl mx-auto py-2">
                             {images.map((img, idx) => (

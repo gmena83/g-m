@@ -7,6 +7,7 @@ export interface ImageData {
     thumbnailUrl?: string;
     category: string;
     description?: string;
+    descriptionEs?: string;
     createdAt: Date; // Firestore Timestamp converted to Date
 }
 
