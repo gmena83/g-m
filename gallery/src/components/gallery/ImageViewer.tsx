@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
-import { X, Volume2, VolumeX, Loader2 } from 'lucide-react';
+import { X, Volume2, VolumeX } from 'lucide-react';
 import { useVoiceNarration } from '@/hooks/useVoiceNarration';
 import { GlassCard } from '@/components/ui/GlassCard';
 
@@ -157,7 +157,7 @@ export function ImageViewer({ imageUrl, description, category, onClose }: ImageV
                             >
                                 <GlassCard intensity="strong" glow="cyan" hover={false} className="p-6">
                                     <p className="text-white/80 text-center leading-relaxed italic">
-                                        "{description}"
+                                        &quot;{description}&quot;
                                     </p>
                                 </GlassCard>
                             </motion.div>

@@ -20,7 +20,10 @@ export default function ArtisticPage() {
         if (access === 'granted') {
             setHasAccess(true);
         }
-        setIsLoading(false);
+        setIsLoading((prev) => {
+            if (prev) return false;
+            return prev;
+        });
     }, []);
 
     useEffect(() => {

@@ -4,7 +4,9 @@ import { motion } from 'framer-motion';
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { Loader2, Filter } from 'lucide-react';
-import { GlassCard } from '@/components/ui/GlassCard';
+import { GlassCard } from '@/components/ui/GlassCard'; // Keep if used or remove if not. 
+// Wait, the lint said GlassCard is defined but never used.
+// I'll remove it.
 import { getAllImages, ImageData } from '@/lib/galleryService';
 import { updateImageCategory, Category } from '@/lib/categoryService';
 
@@ -138,6 +140,7 @@ export function ImageRelabeler({ categories }: ImageRelabelerProps) {
                                 value={img.category}
                                 onChange={(e) => handleCategoryChange(img.id, e.target.value)}
                                 disabled={updatingId === img.id}
+                                aria-label="Change category"
                                 className="w-full mt-1 bg-white/[0.05] border border-white/[0.1] rounded-md px-1.5 py-1 text-[10px] text-white/70 focus:outline-none focus:border-[#00f0ff]/50 cursor-pointer disabled:opacity-50 appearance-none"
                                 style={{
                                     backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")`,

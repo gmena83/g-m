@@ -33,9 +33,9 @@ export default function RootLayout({
               key={i}
               className="particle"
               style={{
-                left: `${Math.random() * 100}%`,
-                animationDelay: `${Math.random() * 20}s`,
-                animationDuration: `${15 + Math.random() * 15}s`,
+                left: `${(i * 5) + (i % 3)}%`,
+                animationDelay: `${(i * 0.7) % 5}s`,
+                animationDuration: `${15 + (i % 5) * 2}s`,
               }}
             />
           ))}

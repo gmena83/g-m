@@ -3,6 +3,7 @@
 import { motion } from 'framer-motion';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { Mail, Lock, Loader2, AlertTriangle } from 'lucide-react';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { signInWithEmailAndPassword } from 'firebase/auth';
@@ -179,12 +180,12 @@ export default function AdminLoginPage() {
                         <p className="text-xs text-white/40 text-center mb-6">
                             Required: NEXT_PUBLIC_FIREBASE_API_KEY, AUTH_DOMAIN, APP_ID
                         </p>
-                        <a
+                        <Link
                             href="/"
-                            className="block text-center text-sm text-white/40 hover:text-white transition-colors"
+                            className="text-sm text-white/40 hover:text-white transition-colors"
                         >
                             ← Back to Gallery
-                        </a>
+                        </Link>
                     </GlassCard>
                 </motion.div>
             </div>
@@ -338,12 +339,12 @@ export default function AdminLoginPage() {
                         transition={{ delay: 0.8 }}
                         className="mt-6 text-center"
                     >
-                        <a
+                        <Link
                             href="/"
                             className="text-sm text-white/40 hover:text-white transition-colors"
                         >
                             ← Back to Gallery
-                        </a>
+                        </Link>
                     </motion.div>
                 </GlassCard>
             </motion.div>

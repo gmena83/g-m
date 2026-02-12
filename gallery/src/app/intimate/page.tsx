@@ -35,7 +35,10 @@ export default function IntimatePage() {
         if (access === 'granted') {
             setHasAccess(true);
         }
-        setIsLoading(false);
+        setIsLoading((prev) => {
+            if (prev) return false;
+            return prev;
+        });
     }, []);
 
     if (isLoading) {

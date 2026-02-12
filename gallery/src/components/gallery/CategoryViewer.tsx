@@ -1,6 +1,6 @@
 'use client';
 
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, Variants } from 'framer-motion';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useState, useCallback, useEffect } from 'react';
@@ -76,7 +76,7 @@ export function CategoryViewer({ images, categoryTitle }: CategoryViewerProps) {
     }, [thumbnailTimeout]);
 
     // 3D flip animation variants
-    const flipVariants = {
+    const flipVariants: Variants = {
         enter: (dir: number) => ({
             rotateY: dir > 0 ? 90 : -90,
             opacity: 0,

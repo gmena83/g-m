@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import NextImage from 'next/image';
 
 import {
     Upload,
@@ -23,11 +24,20 @@ import { auth, storage, db } from '@/lib/firebase';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { ref, uploadBytesResumable, getDownloadURL, listAll } from 'firebase/storage';
 import { collection, addDoc, serverTimestamp, query, where, getDocs } from 'firebase/firestore';
+import { Category } from '@/lib/categoryService';
 import { useCategories } from '@/hooks/useCategories';
 import { seedDefaultCategories } from '@/lib/categoryService';
 import { getIconByName } from '@/components/admin/CategoryManager';
 import { ImageRelabeler } from '@/components/admin/ImageRelabeler';
 import { CategoryManager } from '@/components/admin/CategoryManager';
+
+interface UncategorizedImage {
+    id: string;
+    url: string;
+    description?: string;
+    category?: string;
+    [key: string]: unknown;
+}
 
 export default function AdminDashboardPage() {
     const router = useRouter();
@@ -162,6 +172,16 @@ export default function AdminDashboardPage() {
     const handleUpload = async () => {
         if (!selectedFile || !description) return;
 
+        // Capture non-null references for use in callbacks
+        const currentStorage = storage;
+        const currentDb = db;
+
+        if (!currentStorage || !currentDb) {
+            console.error('Firebase services not initialized');
+            setIsUploading(false);
+            return;
+        }
+
         setIsUploading(true);
         setUploadProgress(0);
 
@@ -169,7 +189,7 @@ export default function AdminDashboardPage() {
             // Create unique filename
             const timestamp = Date.now();
             const filename = `${selectedCategory}/${timestamp}-${selectedFile.name}`;
-            const storageRef = ref(storage, `gallery/${filename}`);
+            const storageRef = ref(currentStorage, `gallery/${filename}`);
 
             // Upload with progress tracking
             const uploadTask = uploadBytesResumable(storageRef, selectedFile);
@@ -189,7 +209,7 @@ export default function AdminDashboardPage() {
                     const downloadUrl = await getDownloadURL(uploadTask.snapshot.ref);
 
                     // Save metadata to Firestore
-                    await addDoc(collection(db, 'images'), {
+                    await addDoc(collection(currentDb, 'images'), {
                         url: downloadUrl,
                         category: selectedCategory,
                         description,
@@ -216,18 +236,21 @@ export default function AdminDashboardPage() {
         }
     };
 
+
+
     // State for review workflow
-    const [uncategorizedImages, setUncategorizedImages] = useState<any[]>([]);
+    const [uncategorizedImages, setUncategorizedImages] = useState<UncategorizedImage[]>([]);
 
     // Fetch uncategorized images
     const fetchUncategorized = useCallback(async () => {
+        if (!db) return;
         const q = query(
             collection(db, 'images'),
             where('category', '==', 'uncategorized'),
             // orderBy('createdAt', 'desc') // Requires index, skip for now or handle in memory
         );
         const snapshot = await getDocs(q);
-        const images = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        const images = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as UncategorizedImage));
         setUncategorizedImages(images);
     }, []);
 
@@ -240,6 +263,11 @@ export default function AdminDashboardPage() {
     // New function to sync existing Storage files to Firestore
     const handleSyncStorage = async () => {
         if (!confirm('This will scan Storage and add missing files to the Gallery. Continue?')) return;
+
+        if (!storage || !db) {
+            console.error('Firebase services not initialized');
+            return;
+        }
 
         setIsSyncing(true);
         setSyncStats(null);
@@ -675,7 +703,7 @@ export default function AdminDashboardPage() {
 }
 
 // Sub-component for reviewing images
-function ReviewCard({ image, categories, onUpdate }: { image: any, categories: any[], onUpdate: () => void }) {
+function ReviewCard({ image, categories, onUpdate }: { image: UncategorizedImage, categories: Category[], onUpdate: () => void }) {
     const [category, setCategory] = useState('events');
     const [description, setDescription] = useState(image.description || '');
     const [isGenerating, setIsGenerating] = useState(false);
@@ -743,6 +771,7 @@ function ReviewCard({ image, categories, onUpdate }: { image: any, categories: a
             // Dynamic import to avoid SSR issues
             const { doc, updateDoc } = await import('firebase/firestore');
             const { db } = await import('@/lib/firebase');
+            if (!db) throw new Error('Firestore not initialized');
 
             await updateDoc(doc(db, 'images', image.id), {
                 category,
@@ -762,18 +791,28 @@ function ReviewCard({ image, categories, onUpdate }: { image: any, categories: a
         try {
             const { doc, deleteDoc } = await import('firebase/firestore');
             const { db } = await import('@/lib/firebase');
+            if (!db) throw new Error('Firestore not initialized');
             await deleteDoc(doc(db, 'images', image.id));
             onUpdate();
         } catch (e) { console.error(e) }
     };
 
     return (
-        <GlassCard intensity="weak" className="p-4 flex flex-col gap-4">
+        <GlassCard intensity="light" className="p-4 flex flex-col gap-4">
             <div className="relative h-48 rounded-lg overflow-hidden bg-black/20">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={image.url} alt="Review" className="w-full h-full object-cover" />
+                <NextImage
+                    src={image.url}
+                    alt="Review"
+                    fill
+                    className="object-cover"
+                    sizes="(max-width: 768px) 100vw, 33vw"
+                />
                 <div className="absolute top-2 right-2">
-                    <button onClick={handleDelete} className="p-2 bg-black/50 text-white rounded-full hover:bg-red-500/50 transition-colors">
+                    <button
+                        onClick={handleDelete}
+                        className="p-2 bg-black/50 text-white rounded-full hover:bg-red-500/50 transition-colors"
+                        aria-label="Delete image"
+                    >
                         <X size={14} />
                     </button>
                 </div>

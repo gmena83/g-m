@@ -130,8 +130,8 @@ export function CategoryManager({ categories, onRefresh }: CategoryManagerProps)
                         <button
                             onClick={() => handleToggleProtected(cat)}
                             className={`p-1.5 rounded-lg transition-all ${cat.isProtected
-                                    ? 'text-[#ff00aa] bg-[#ff00aa]/10'
-                                    : 'text-white/20 hover:text-white/40'
+                                ? 'text-[#ff00aa] bg-[#ff00aa]/10'
+                                : 'text-white/20 hover:text-white/40'
                                 }`}
                             title={cat.isProtected ? 'Password protected' : 'Public'}
                         >
@@ -162,7 +162,7 @@ export function CategoryManager({ categories, onRefresh }: CategoryManagerProps)
                         animate={{ opacity: 1, height: 'auto' }}
                         exit={{ opacity: 0, height: 0 }}
                     >
-                        <GlassCard intensity="weak" className="p-4 space-y-3">
+                        <GlassCard intensity="light" className="p-4 space-y-3">
                             <input
                                 type="text"
                                 value={newName}
@@ -181,8 +181,8 @@ export function CategoryManager({ categories, onRefresh }: CategoryManagerProps)
                                             key={opt.name}
                                             onClick={() => setNewIcon(opt.name)}
                                             className={`p-2 rounded-lg border transition-all ${newIcon === opt.name
-                                                    ? 'border-[#00f0ff] bg-[#00f0ff]/10 text-[#00f0ff]'
-                                                    : 'border-white/[0.05] text-white/30 hover:text-white/50'
+                                                ? 'border-[#00f0ff] bg-[#00f0ff]/10 text-[#00f0ff]'
+                                                : 'border-white/[0.05] text-white/30 hover:text-white/50'
                                                 }`}
                                             title={opt.name}
                                         >
