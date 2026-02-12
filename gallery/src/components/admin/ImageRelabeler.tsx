@@ -69,95 +69,258 @@ export function ImageRelabeler({ categories }: ImageRelabelerProps) {
 
     return (
         <div>
-            {/* Filter Bar */}
-            <div className="flex items-center gap-2 mb-4 flex-wrap">
-                <Filter size={14} className="text-white/40" />
-                <button
-                    onClick={() => setFilterCat('all')}
-                    className={`px-3 py-1 rounded-full text-xs transition-all ${filterCat === 'all'
-                        ? 'bg-white/10 text-white border border-white/20'
-                        : 'text-white/40 hover:text-white/60'
-                        }`}
-                >
-                    All ({images.length})
-                </button>
-                {categories.map((cat) => {
-                    const count = images.filter((i) => i.category === cat.slug).length;
-                    return (
-                        <button
-                            key={cat.id}
-                            onClick={() => setFilterCat(cat.slug)}
-                            className={`px-3 py-1 rounded-full text-xs transition-all ${filterCat === cat.slug
-                                ? 'bg-white/10 text-white border border-white/20'
-                                : 'text-white/40 hover:text-white/60'
-                                }`}
-                        >
-                            {cat.name} ({count})
-                        </button>
-                    );
-                })}
-            </div>
+    // ... (Keep existing state)
+            const [editingImage, setEditingImage] = useState<ImageData | null>(null);
+            const [editForm, setEditForm] = useState({description: '', descriptionEs: '' });
+            const [isTranslating, setIsTranslating] = useState(false);
+            const [isSaving, setIsSaving] = useState(false);
 
-            {/* Thumbnail Grid */}
-            {filtered.length === 0 ? (
-                <p className="text-white/30 text-sm text-center py-8">
-                    No images found{filterCat !== 'all' ? ` in "${filterCat}"` : ''}
-                </p>
-            ) : (
-                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2">
-                    {filtered.map((img) => (
-                        <motion.div
-                            key={img.id}
-                            layout
-                            initial={{ opacity: 0, scale: 0.9 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            className="group relative"
-                        >
-                            <div
-                                className="relative aspect-square rounded-lg overflow-hidden border-2 transition-all"
-                                style={{
-                                    borderColor: getCategoryColor(img.category) + '40',
-                                }}
+    // ... (Keep existing fetchImages)
+
+    const handleEditClick = (img: ImageData) => {
+                setEditingImage(img);
+            setEditForm({
+                description: img.description || '',
+            descriptionEs: img.descriptionEs || ''
+        });
+    };
+
+    const handleTranslate = async () => {
+        if (!editForm.description) return;
+            setIsTranslating(true);
+            try {
+            const res = await fetch('/api/translate', {
+                method: 'POST',
+            headers: {'Content-Type': 'application/json' },
+            body: JSON.stringify({text: editForm.description, targetLanguage: 'Spanish' })
+            });
+            const data = await res.json();
+            if (data.translatedText) {
+                setEditForm(prev => ({ ...prev, descriptionEs: data.translatedText }));
+            }
+        } catch (error) {
+                console.error(error);
+        } finally {
+                setIsTranslating(false);
+        }
+    };
+
+    const handleSaveDetails = async () => {
+        if (!editingImage) return;
+            setIsSaving(true);
+            try {
+            // Update in Firestore
+            const {doc, updateDoc} = await import('firebase/firestore');
+            const {db} = await import('@/lib/firebase');
+            if (db) {
+                await updateDoc(doc(db, 'images', editingImage.id), {
+                    description: editForm.description,
+                    descriptionEs: editForm.descriptionEs
+                });
+
+                // Update local state
+                setImages(prev => prev.map(img =>
+            img.id === editingImage.id
+            ? {...img, description: editForm.description, descriptionEs: editForm.descriptionEs }
+            : img
+            ));
+            setEditingImage(null);
+            }
+        } catch (error) {
+                console.error("Failed to save:", error);
+        } finally {
+                setIsSaving(false);
+        }
+    };
+
+            // ... (Keep existing filtered/getCategoryColor logic)
+
+            // ... (Keep existing loading check)
+
+            return (
+            <div>
+                {/* Filter Bar ... (Keep existing) */}
+                <div className="flex items-center gap-2 mb-4 flex-wrap">
+                    <Filter size={14} className="text-white/40" />
+                    <button
+                        onClick={() => setFilterCat('all')}
+                        className={`px-3 py-1 rounded-full text-xs transition-all ${filterCat === 'all'
+                            ? 'bg-white/10 text-white border border-white/20'
+                            : 'text-white/40 hover:text-white/60'
+                            }`}
+                    >
+                        All ({images.length})
+                    </button>
+                    {categories.map((cat) => {
+                        const count = images.filter((i) => i.category === cat.slug).length;
+                        return (
+                            <button
+                                key={cat.id}
+                                onClick={() => setFilterCat(cat.slug)}
+                                className={`px-3 py-1 rounded-full text-xs transition-all ${filterCat === cat.slug
+                                    ? 'bg-white/10 text-white border border-white/20'
+                                    : 'text-white/40 hover:text-white/60'
+                                    }`}
                             >
-                                <Image
-                                    src={img.thumbnailUrl || img.url}
-                                    alt={img.description || 'Gallery image'}
-                                    fill
-                                    className="object-cover"
-                                    sizes="(max-width: 640px) 33vw, (max-width: 1024px) 16vw, 12vw"
-                                />
+                                {cat.name} ({count})
+                            </button>
+                        );
+                    })}
+                </div>
 
-                                {/* Loading overlay */}
-                                {updatingId === img.id && (
-                                    <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-                                        <Loader2 size={16} className="animate-spin text-[#00f0ff]" />
+                {/* Thumbnail Grid */}
+                {filtered.length === 0 ? (
+                    <p className="text-white/30 text-sm text-center py-8">
+                        No images found{filterCat !== 'all' ? ` in "${filterCat}"` : ''}
+                    </p>
+                ) : (
+                    <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2">
+                        {filtered.map((img) => (
+                            <motion.div
+                                key={img.id}
+                                layout
+                                initial={{ opacity: 0, scale: 0.9 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                className="group relative cursor-pointer"
+                                onClick={() => handleEditClick(img)}
+                            >
+                                <div
+                                    className="relative aspect-square rounded-lg overflow-hidden border-2 transition-all group-hover:border-white/50"
+                                    style={{
+                                        borderColor: getCategoryColor(img.category) + '40',
+                                    }}
+                                >
+                                    <Image
+                                        src={img.thumbnailUrl || img.url}
+                                        alt={img.description || 'Gallery image'}
+                                        fill
+                                        className="object-cover"
+                                        sizes="(max-width: 640px) 33vw, (max-width: 1024px) 16vw, 12vw"
+                                    />
+
+                                    {/* Icons for status */}
+                                    <div className="absolute top-1 right-1 flex gap-1">
+                                        {img.descriptionEs && <div className="w-2 h-2 rounded-full bg-green-500 shadow-sm" title="Has Spanish" />}
+                                        {!img.description && <div className="w-2 h-2 rounded-full bg-red-500 shadow-sm" title="Missing Description" />}
                                     </div>
-                                )}
+
+                                    {/* Loading overlay */}
+                                    {updatingId === img.id && (
+                                        <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                                            <Loader2 size={16} className="animate-spin text-[#00f0ff]" />
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Category Dropdown - Click propagation stopped so we can open edit modal on card click, but change category directly here if needed. 
+                                Actually, checking standard UX, let's keep Category separate or move it to modal? 
+                                User asked for descriptions. Let's keep category quick-edit here but separate click.
+                            */}
+                                <div onClick={(e) => e.stopPropagation()}>
+                                    <select
+                                        value={img.category}
+                                        onChange={(e) => handleCategoryChange(img.id, e.target.value)}
+                                        disabled={updatingId === img.id}
+                                        aria-label="Change category"
+                                        className="w-full mt-1 bg-white/[0.05] border border-white/[0.1] rounded-md px-1.5 py-1 text-[10px] text-white/70 focus:outline-none focus:border-[#00f0ff]/50 cursor-pointer disabled:opacity-50 appearance-none"
+                                        style={{
+                                            backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")`,
+                                            backgroundRepeat: 'no-repeat',
+                                            backgroundPosition: 'right 4px center',
+                                        }}
+                                    >
+                                        {categories.map((cat) => (
+                                            <option key={cat.id} value={cat.slug} style={{ backgroundColor: '#0a0a0f', color: '#ffffff' }}>
+                                                {cat.name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                            </motion.div>
+                        ))}
+                    </div>
+                )}
+
+                {/* EDIT MODAL */}
+                {editingImage && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm" onClick={() => setEditingImage(null)}>
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            className="bg-[#1a1a20] border border-white/10 rounded-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col md:flex-row shadow-2xl"
+                            onClick={e => e.stopPropagation()}
+                        >
+                            {/* Image Preview Side */}
+                            <div className="w-full md:w-1/3 bg-black/50 relative min-h-[300px] md:min-h-full">
+                                <Image
+                                    src={editingImage.url}
+                                    alt="Editing"
+                                    fill
+                                    className="object-contain p-4"
+                                />
                             </div>
 
-                            {/* Category Dropdown */}
-                            <select
-                                value={img.category}
-                                onChange={(e) => handleCategoryChange(img.id, e.target.value)}
-                                disabled={updatingId === img.id}
-                                aria-label="Change category"
-                                className="w-full mt-1 bg-white/[0.05] border border-white/[0.1] rounded-md px-1.5 py-1 text-[10px] text-white/70 focus:outline-none focus:border-[#00f0ff]/50 cursor-pointer disabled:opacity-50 appearance-none"
-                                style={{
-                                    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")`,
-                                    backgroundRepeat: 'no-repeat',
-                                    backgroundPosition: 'right 4px center',
-                                }}
-                            >
-                                {categories.map((cat) => (
-                                    <option key={cat.id} value={cat.slug} style={{ backgroundColor: '#0a0a0f', color: '#ffffff' }}>
-                                        {cat.name}
-                                    </option>
-                                ))}
-                            </select>
+                            {/* Form Side */}
+                            <div className="flex-1 p-6 flex flex-col overflow-y-auto">
+                                <h3 className="text-xl text-white font-light mb-6">Edit Image Details</h3>
+
+                                <div className="space-y-6 flex-1">
+                                    {/* English */}
+                                    <div>
+                                        <label className="text-xs uppercase tracking-wider text-[#00f0ff] mb-2 block">English Description</label>
+                                        <textarea
+                                            value={editForm.description}
+                                            onChange={e => setEditForm(prev => ({ ...prev, description: e.target.value }))}
+                                            className="w-full h-32 bg-black/20 border border-white/10 rounded-lg p-3 text-white/90 text-sm focus:border-[#00f0ff]/50 focus:outline-none resize-none"
+                                            placeholder="Enter English description..."
+                                        />
+                                    </div>
+
+                                    {/* Divider with Action */}
+                                    <div className="flex items-center justify-center">
+                                        <button
+                                            onClick={handleTranslate}
+                                            disabled={isTranslating || !editForm.description}
+                                            className="flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 text-xs text-white/60 hover:text-[#00f0ff] transition-all disabled:opacity-30"
+                                        >
+                                            {isTranslating ? <Loader2 size={12} className="animate-spin" /> : <div className="flex gap-1"><span>🇺🇸</span> <span>⬇️</span> <span>🇪🇸</span></div>}
+                                            Auto-Translate to Spanish
+                                        </button>
+                                    </div>
+
+                                    {/* Spanish */}
+                                    <div>
+                                        <label className="text-xs uppercase tracking-wider text-[#ff00aa] mb-2 block">Spanish Description</label>
+                                        <textarea
+                                            value={editForm.descriptionEs}
+                                            onChange={e => setEditForm(prev => ({ ...prev, descriptionEs: e.target.value }))}
+                                            className="w-full h-32 bg-black/20 border border-white/10 rounded-lg p-3 text-white/90 text-sm focus:border-[#ff00aa]/50 focus:outline-none resize-none"
+                                            placeholder="Descripción en español..."
+                                        />
+                                    </div>
+                                </div>
+
+                                {/* Actions */}
+                                <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-white/5">
+                                    <button
+                                        onClick={() => setEditingImage(null)}
+                                        className="px-4 py-2 rounded-lg text-white/50 hover:text-white transition-colors"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        onClick={handleSaveDetails}
+                                        disabled={isSaving}
+                                        className="px-6 py-2 rounded-lg bg-[#00f0ff] hover:bg-[#00f0ff]/80 text-black font-medium transition-colors flex items-center gap-2 disabled:opacity-50"
+                                    >
+                                        {isSaving && <Loader2 size={16} className="animate-spin" />}
+                                        Save Changes
+                                    </button>
+                                </div>
+                            </div>
                         </motion.div>
-                    ))}
-                </div>
-            )}
-        </div>
-    );
+                    </div>
+                )}
+            </div>
+            );
 }
