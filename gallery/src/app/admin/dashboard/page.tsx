@@ -48,6 +48,7 @@ export default function AdminDashboardPage() {
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
     const [selectedCategory, setSelectedCategory] = useState('events');
     const [description, setDescription] = useState('');
+    const [descriptionEs, setDescriptionEs] = useState('');
     const [isGeneratingDescription, setIsGeneratingDescription] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
     const [uploadProgress, setUploadProgress] = useState(0);
@@ -87,6 +88,7 @@ export default function AdminDashboardPage() {
             setSelectedFile(file);
             setPreviewUrl(URL.createObjectURL(file));
             setDescription('');
+            setDescriptionEs('');
             setUploadSuccess(false);
         }
     };
@@ -98,6 +100,7 @@ export default function AdminDashboardPage() {
             setSelectedFile(file);
             setPreviewUrl(URL.createObjectURL(file));
             setDescription('');
+            setDescriptionEs('');
             setUploadSuccess(false);
         }
     }, []);
@@ -158,7 +161,9 @@ export default function AdminDashboardPage() {
 
             if (response.ok) {
                 const data = await response.json();
-                setDescription(data.description);
+                // Handle new JSON response with dual languages
+                if (data.description) setDescription(data.description);
+                if (data.descriptionEs) setDescriptionEs(data.descriptionEs);
             } else {
                 console.error('Failed to generate description');
             }
@@ -213,6 +218,7 @@ export default function AdminDashboardPage() {
                         url: downloadUrl,
                         category: selectedCategory,
                         description,
+                        descriptionEs,
                         filename: selectedFile.name,
                         size: selectedFile.size,
                         createdAt: serverTimestamp(),
@@ -553,20 +559,34 @@ export default function AdminDashboardPage() {
                             </motion.button>
                         )}
 
-                        {/* Description Textarea */}
-                        <div className="relative">
-                            <textarea
-                                value={description}
-                                onChange={(e) => setDescription(e.target.value)}
-                                placeholder={selectedFile ? "Click the button above to generate an AI description, or write your own..." : "Select an image first..."}
-                                disabled={!selectedFile}
-                                className="w-full h-48 bg-white/[0.05] border border-white/[0.1] rounded-xl p-4 text-white placeholder-white/30 resize-none focus:outline-none focus:border-[#00f0ff]/50 focus:ring-1 focus:ring-[#00f0ff]/30 transition-all disabled:opacity-50"
-                            />
-                            {description && (
-                                <span className="absolute bottom-3 right-3 text-xs text-white/30">
-                                    {description.length} chars
-                                </span>
-                            )}
+                        {/* Description Textareas */}
+                        <div className="space-y-4">
+                            <div>
+                                <label className="text-xs uppercase tracking-wider text-[#00f0ff] mb-2 block">English Description</label>
+                                <textarea
+                                    value={description}
+                                    onChange={(e) => setDescription(e.target.value)}
+                                    placeholder={selectedFile ? "Click the button above to generate an AI description, or write your own..." : "Select an image first..."}
+                                    disabled={!selectedFile}
+                                    className="w-full h-32 bg-white/[0.05] border border-white/[0.1] rounded-xl p-4 text-white placeholder-white/30 resize-none focus:outline-none focus:border-[#00f0ff]/50 focus:ring-1 focus:ring-[#00f0ff]/30 transition-all disabled:opacity-50"
+                                />
+                                {description && (
+                                    <div className="text-right mt-1">
+                                        <span className="text-xs text-white/30">{description.length} chars</span>
+                                    </div>
+                                )}
+                            </div>
+
+                            <div>
+                                <label className="text-xs uppercase tracking-wider text-[#ff00aa] mb-2 block">Spanish Description</label>
+                                <textarea
+                                    value={descriptionEs}
+                                    onChange={(e) => setDescriptionEs(e.target.value)}
+                                    placeholder={selectedFile ? "Generación automática o escribe tu propia descripción..." : "Select an image first..."}
+                                    disabled={!selectedFile}
+                                    className="w-full h-32 bg-white/[0.05] border border-white/[0.1] rounded-xl p-4 text-white placeholder-white/30 resize-none focus:outline-none focus:border-[#ff00aa]/50 focus:ring-1 focus:ring-[#ff00aa]/30 transition-all disabled:opacity-50"
+                                />
+                            </div>
                         </div>
 
                         {/* Upload Button */}

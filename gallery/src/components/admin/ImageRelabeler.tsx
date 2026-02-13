@@ -3,7 +3,7 @@
 import { motion } from 'framer-motion';
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
-import { Loader2, Filter } from 'lucide-react';
+import { Loader2, Filter, Sparkles } from 'lucide-react';
 import { getAllImages, ImageData } from '@/lib/galleryService';
 import { updateImageCategory, Category } from '@/lib/categoryService';
 
@@ -21,6 +21,7 @@ export function ImageRelabeler({ categories }: ImageRelabelerProps) {
     const [editingImage, setEditingImage] = useState<ImageData | null>(null);
     const [editForm, setEditForm] = useState({ description: '', descriptionEs: '' });
     const [isTranslating, setIsTranslating] = useState(false);
+    const [isGenerating, setIsGenerating] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
 
     const fetchImages = async () => {
@@ -73,6 +74,45 @@ export function ImageRelabeler({ categories }: ImageRelabelerProps) {
             console.error(error);
         } finally {
             setIsTranslating(false);
+        }
+    };
+
+    const handleGenerateAttenborough = async () => {
+        if (!editingImage) return;
+        setIsGenerating(true);
+        try {
+            // Fetch image from URL
+            const res = await fetch(editingImage.url);
+            const blob = await res.blob();
+            // Convert to base64
+            const reader = new FileReader();
+            reader.readAsDataURL(blob);
+            reader.onloadend = async () => {
+                const base64data = reader.result?.toString().split(',')[1];
+                if (!base64data) return;
+
+                const response = await fetch('/api/generate-description', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        imageBase64: base64data,
+                        mimeType: blob.type || 'image/jpeg',
+                    }),
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    setEditForm(prev => ({
+                        ...prev,
+                        description: !prev.description ? (data.description || '') : prev.description,
+                        descriptionEs: !prev.descriptionEs ? (data.descriptionEs || '') : prev.descriptionEs
+                    }));
+                }
+                setIsGenerating(false);
+            };
+        } catch (error) {
+            console.error('Error generating:', error);
+            setIsGenerating(false);
         }
     };
 
@@ -251,6 +291,24 @@ export function ImageRelabeler({ categories }: ImageRelabelerProps) {
                         {/* Form Side */}
                         <div className="flex-1 p-6 flex flex-col overflow-y-auto">
                             <h3 className="text-xl text-white font-light mb-6">Edit Image Details</h3>
+
+                            <button
+                                onClick={handleGenerateAttenborough}
+                                disabled={isGenerating}
+                                className="w-full mb-6 py-3 rounded-xl bg-gradient-to-r from-[#ff00aa] to-[#00f0ff] text-white font-medium flex items-center justify-center gap-2 disabled:opacity-50 hover:opacity-90 transition-opacity"
+                            >
+                                {isGenerating ? (
+                                    <>
+                                        <Loader2 size={16} className="animate-spin" />
+                                        Channeling Sir David...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Sparkles size={16} />
+                                        Generate Attenborough Description
+                                    </>
+                                )}
+                            </button>
 
                             <div className="space-y-6 flex-1">
                                 {/* English */}

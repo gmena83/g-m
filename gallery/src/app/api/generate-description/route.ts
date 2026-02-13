@@ -30,8 +30,14 @@ export async function POST(request: NextRequest) {
         const genAI = new GoogleGenerativeAI(apiKey);
         const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
 
+        const prompt = `${ATTENBOROUGH_PROMPT}
+        
+        Output a JSON object with two keys:
+        - "description": The English description.
+        - "descriptionEs": A Spanish translation of the description, maintaining the same poetic and dramatic tone.`;
+
         const result = await model.generateContent([
-            { text: ATTENBOROUGH_PROMPT },
+            { text: prompt },
             {
                 inlineData: {
                     mimeType: mimeType || 'image/jpeg',
@@ -41,9 +47,21 @@ export async function POST(request: NextRequest) {
         ]);
 
         const response = await result.response;
-        const description = response.text();
+        const text = response.text();
 
-        return NextResponse.json({ description });
+        // Clean up markdown code blocks if present
+        const jsonStr = text.replace(/```json\n?|\n?```/g, '').trim();
+
+        let data;
+        try {
+            data = JSON.parse(jsonStr);
+        } catch (e) {
+            console.error("Failed to parse JSON:", text);
+            // Fallback if JSON parsing fails
+            data = { description: text, descriptionEs: '' };
+        }
+
+        return NextResponse.json(data);
     } catch (error) {
         console.error('Error generating description:', error);
         return NextResponse.json(
