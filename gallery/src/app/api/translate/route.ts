@@ -15,7 +15,7 @@ export async function POST(req: Request) {
         }
 
         const genAI = new GoogleGenerativeAI(apiKey);
-        const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+        const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
 
         const prompt = `Translate the following art/photography description into ${targetLanguage}. Keep the tone artistic, professional, and evocative. Do not add explanations, just return the translated text.\n\nText: "${text}"`;
 
