@@ -39,9 +39,13 @@ export async function POST(req: Request) {
         });
 
         if (!response.ok) {
-            const error = await response.json();
-            console.error('ElevenLabs API Error:', error);
-            return NextResponse.json({ error: 'Error generating audio' }, { status: response.status });
+            const errorData = await response.json();
+            console.error('ElevenLabs API Error:', errorData);
+            return NextResponse.json({
+                error: 'Error generating audio',
+                details: errorData,
+                status: response.status
+            }, { status: response.status });
         }
 
         // Return audio stream
